@@ -15,7 +15,16 @@ class BaseModel:
         self.created_at = datetime.now()
         self.updated_at = None
 
+    def __init__(self):
+        """Print: [<class name>] (<self.id>) <self.__dict__>."""
+
+        print("[{}] ({}) {}".format(type(self).__name__, self.id, self.__dict__))
+
     def save(self):
         """Update updated_at attribute with the current datetime."""
 
         self.updated_at = datetime.now()
+
+    def to_dict(self):
+        """Return a dictionary containing all keys/values of __dict__ of the instance."""
+        
