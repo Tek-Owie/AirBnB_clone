@@ -13,7 +13,7 @@ class BaseModel:
     def __init__(self):
         self.id = str(uuid4())
         self.created_at = datetime.now()
-        self.updated_at = None
+        self.updated_at = datetime.now()
 
     def __init__(self):
         """Print: [<class name>] (<self.id>) <self.__dict__>."""
@@ -27,4 +27,8 @@ class BaseModel:
 
     def to_dict(self):
         """Return a dictionary containing all keys/values of __dict__ of the instance."""
-        
+        temp = self.__dict__
+        temp['__class__'] = type(self).__name__
+        temp['created_at'] = datetime.isoformat(created_at)
+        temp['updated_at'] = datetime.isoformat(updated_at)
+        return temp
