@@ -1,300 +1,284 @@
-#!/usr/bin/python3
+u#!/usr/bin/python3
 
-
-"""
-    Module that defines HBNBCommand class
-    which is a child class of Cmd class
-"""
-
-
+"""A module for command line interface tool"""
 import cmd
 import json
-import models
-import re
-
-
-storage = models.storage
-BaseModel = models.base_model.BaseModel
-User = models.user.User
-State = models.state.State
-Place = models.place.Place
-City = models.city.City
-Amenity = models.amenity.Amenity
-Review = models.review.Review
-
-
-def find_match(arg):
-    pattern = '^[A-Za-z]*.?[a-z]+\\([\"0-9a-f-\"]*\\)$'
-    result = re.findall(r'{}'.format(pattern), arg)
-    return result
-
-
-def split_match(arg):
-    arg = list(arg[0].split("."))
-    return arg
-
-
-def find_inner_match(arg):
-    pattern = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-    result = re.findall(pattern, arg[1])
-    return result
+from models.amenity import Amenity
+from models.base_model import BaseModel
+from models.city import City
+from models.place import Place
+from models.review import Review
+from models.state import State
+from models.user import User
+from models import storage
 
 
 class HBNBCommand(cmd.Cmd):
-    """ A representation of HBNBCommand class """
-    prompt = "(hbnh) "
-    __model_list = [
-        "BaseModel",
-        "User",
-        "State",
-        "Place",
-        "Amenity",
-        "City",
-        "Review"
-    ]
-    __short_cut_command_dict = {
-        "all()": "do_all",
-        "create()": "do_create",
-        "show()": "do_show",
-        "destroy()": "do_destroy",
-        "update()": "do_update",
-        "count()": "count"
+
+    """
+    A command line interface tool
+    for the HBNB project
+    """
+
+    prompt = '(hbnb) '
+    __classes = {
+
+        'Amenity',
+        'BaseModel',
+        'City',
+        'Place',
+        'Review',
+        'State',
+        'User',
+
     }
 
-    # ----- basic HBnB commands -----
-    def default(self, line):
-        match = find_match(line)
-        # print(match)
-        if match:
-            match = split_match(match)
-            # print("--split--")
-            # print(match)
-            # print("----------")
-            # print(find_inner_match(match))
-            if len(match) > 1:
+    def precmd(self, arg):
 
-                try:
-                    value = HBNBCommand.__short_cut_command_dict[match[1]]
-                except KeyError:
-                    print("** unknown command: {}".format(match[1]))
+        if "." in arg and "(" in arg and ")" in arg:
+            if "{" not in arg and "}" not in arg:
+                holder = arg.split(".")
+                holder1 = holder[1].split("(")
+                holder2 = holder1[1].split(")")
+                if "\"" in arg:
+                    holder3 = holder2[0].split("\"")
+                    try:
+                        args = [holder1[0],
+                                holder[0],
+                                holder3[1],
+                                holder3[3],
+                                holder3[5]
+                                ]
+                        arg = " ".join(args)
+                    except IndexError:
+                        arg = holder1[0] + " " + holder[0] + " " + holder3[1]
+
                 else:
-                    eval("self.{}('{}')".format(value, match[0]))
+                    arg = holder1[0] + " " + holder[0]
+        return arg
 
-            elif len(match) == 1:
-                try:
-                    value = HBNBCommand.__short_cut_command_dict[match[0]]
-                except KeyError:
-                    print("** unknown command: {}".format(match[0]))
-                else:
-                    eval("self.{}()".format(value))
-        else:
-            print("** Unknown syntax: {}".format(line))
-
-    def emptyline(self):
-        pass
-
-    def do_EOF(self, args):
-        """ EOF command to exit the program\n"""
-        return True
+    def do_count(self, arg):
+        """ Counts any class attribute"""
+        if arg in self.__classes:
+            with open("storage.json", 'r') as file:
+                new = json.load(file)
+                holder = []
+                count = 0
+                for data in new:
+                    if arg[0] in data:
+                        holder.append(str(new[data]))
+                        count += 1
+            file.close()
+            print(count)
 
     def do_quit(self, arg):
-        """ Quit command to exit the program\n"""
+        """Quits the console and returns nothing"""
+        exit()
+
+    def do_EOF(self, arg):
+        """sends EOF signal to the console"""
+        print("")
         return True
 
-    def do_create(self, args):
-        """ Creates a new instance of BaseModel\n
-        (usage: create <classname>)\n
-        """
+    def emptyline(self):
+        """Skips empty lines of command"""
+        pass
 
-        if args:
-            if args in HBNBCommand.__model_list:
-                newInstance = eval(args)()
-                newInstance.save()
-                print(newInstance.id)
-            else:
-                print("** class doesn't exist **")
+    def do_create(self, arg):
+        """
+        creates a new instance of BaseModel
+        usage: create BaseModel
+        """
+        value = parse(arg)
+        if not value:
+            print("** class name missing **")
+        # if value[0] == 'BaseModel':
+        elif value[0] in self.__classes:
+            print(eval(value[0])().id)
+            storage.save()
+
         else:
+            print("** class doesn't exist **")
+
+    def do_show(self, arg):
+        """
+        Prints the string representation
+        of an instance based on the class
+        """
+        value = parse(arg)
+
+        if not value:
             print("** class name missing **")
 
-    def do_show(self, args):
-        """ Prints the string representation of an instance\n
-        based on the class name and id\n
-        (usage: show <classname> <id>)\n
+        elif value[0] not in self.__classes:
+            print("** class doesn't exist **")
+
+        elif value[0] in self.__classes:
+            with open("storage.json", "r") as file:
+                holder = json.load(file)
+                file.close()
+            try:
+                key = value[0] + "." + value[1]
+            except IndexError:
+                print("** instance id missing **")
+                return
+            try:
+                print(holder[key])
+                # print(storage.all()[key])
+            except KeyError:
+                print("** no instance found **")
+
+    def do_destroy(self, arg):
         """
-        # key 0 conatins the classname key 1 contains the id
-        show_dict = {"0": "", "1": ""}
-        obj_dict = {}
-        res = {}
-        i = 0
+        Deletes an instance based
+        on the class name passed
+        as an argument with the id
+        """
+        value = parse(arg)
+        all_obj = storage.all()
 
-        if args:
-            args = list(args.split(" "))
-
-            while i < len(args):
-                show_dict[str(i)] = args[i]
-                i += 1
-
-            if show_dict["0"] in HBNBCommand.__model_list:
-                if show_dict["1"]:
-                    with open("file.json", mode="r") as fp:
-                        obj_dict = json.load(fp)
-
-                    for key, value in obj_dict.items():
-                        if value["id"] == show_dict["1"]:
-                            res = value
-
-                    if res != {}:
-                        res = eval(show_dict["0"])(**res)
-                        print(res)
-                    else:
-                        print("** no instance found **")
-                else:
-                    print("** instance id missing **")
-            else:
-                print("** class doesn't exist **")
-        else:
+        if not value:
             print("** class name missing **")
 
-    def do_destroy(self, args):
-        """ Deletes an instance based on the class name and id\n
-        (usage: destroy <classname> <id>)\n
+        elif value[0] == 'all':
+            with open(type(self).__file_path, "r") as file:
+                holder = json.load(file)
+            file.close()
+            holder.clear()
+            with open("file.json", "w") as file:
+                json.dump(holder, file, indent=2)
+            file.close()
+            with open("storage.json", "w") as file:
+                json.dump(holder, file, indent=2)
+            file.close()
+            storage.destroy()
+
+        elif value[0] not in self.__classes:
+            print("** class doesn't exist **")
+
+        elif value[0] in self.__classes:
+            with open("file.json", "r") as file:
+                holder = json.load(file)
+            file.close()
+            try:
+                key = value[0] + "." + value[1]
+            except IndexError:
+                print("** instance id missing **")
+                return
+            try:
+                holder.pop(key)
+                objects = storage
+                objects.destroy(key)
+                objects.save()
+            except KeyError:
+                print("** no instance found **")
+                return
+            with open("file.json", "w") as file:
+                json.dump(holder, file, indent=2)
+            file.close()
+#           FOR STORAGE REPRESENTATION
+            with open("storage.json", "r") as file:
+                holder = json.load(file)
+            file.close()
+            try:
+                key = value[0] + "." + value[1]
+            except IndexError:
+                print("** instance id is missing **")
+                return
+
+            with open("storage.json", "w") as file:
+                json.dump(holder, file, indent=2)
+            file.close()
+
+    def do_all(self, arg):
+        """"
+        prints all string representation
+        of all
         """
+        value = parse(arg)
 
-        show_dict = {"0": "", "1": ""}
-        obj_dict = {}
-        dict_key = ""
-        i = 0
+        if not value:
+            hold = storage.all()
+            holder = []
+            for key in hold.keys():
+                holder.append(str(hold[key]))
+            # with open("storage.json", 'r') as file:
+            #     new = json.load(file)
+            #     holder = []
+            #     for data in new:
+            #             holder.append(str(new[data]))
+            print(holder)
+            del holder
+            return
 
-        if args:
-            args = list(args.split(" "))
+        elif value[0] in self.__classes:
+            with open("storage.json", 'r') as file:
+                new = json.load(file)
+                holder = []
+                for data in new:
+                    if value[0] in data:
+                        holder.append(str(new[data]))
+            file.close()
+            print(holder)
 
-            while i < len(args):
-                show_dict[str(i)] = args[i]
-                i += 1
+        elif value[0] not in self.__classes:
+            print("** class doesn't exist **")
+            return
 
-            if show_dict["0"] in HBNBCommand.__model_list:
-                if show_dict["1"]:
-                    with open("file.json", mode="r") as fp:
-                        obj_dict = json.load(fp)
+    def do_update(self, arg):
+        """
+        updates a given instance
+        based on the class namean id
+        Eg:
+        <update> <class name> <id> <attr name>
+        """
+        value = parse(arg)
 
-                    for key, value in obj_dict.items():
-                        if value["id"] == show_dict["1"]:
-                            dict_key = key
-
-                    if dict_key != "":
-                        del obj_dict[dict_key]
-
-                        with open("file.json", mode="w") as fp:
-                            json.dump(obj_dict, fp)
-                    else:
-                        print("** no instance found **")
-                else:
-                    print("** instance id missing **")
-            else:
-                print("** class doesn't exist **")
-        else:
+        if not value:
             print("** class name missing **")
+            return
 
-    def do_all(self, args=""):
-        """ Prints all string representation of all instances\n
-        based or not on the class name.\n
-        (usage: all BaseModel or all)\n
-        """
-        obj_dict = {}
-        obj_dict_by_model = {}
-        if args:
-            if args in HBNBCommand.__model_list:
-                with open("file.json", mode="r") as fp:
-                    obj_dict = json.load(fp)
+        elif value[0] not in self.__classes:
+            print("** class doesn't exist **")
+            return
 
-                for key, value in obj_dict.items():
-                    if value["__class__"] == args:
-                        res = eval(value["__class__"])(**value)
-                        print(res)
-            else:
-                print("** class doesn't exist **")
+        elif len(value) < 2:
+            print("** instance id missing **")
+            return
+
+        # elif len(value) < 4:
+        #     print("** value missing **")
+
         else:
-            with open("file.json", mode="r") as fp:
-                obj_dict = json.load(fp)
+            try:
+                with open("file.json", 'r+') as file:
+                    holder = json.load(file)
+                file.close()
+                key = value[0] + "." + value[1]
+                if key not in holder.keys():
+                    print("** no instance found **")
+                    return
+                try:
+                    attr_name = value[2]
+                except IndexError:
+                    print("** attribute name missing **")
+                    return
+                try:
+                    new_value = value[3]
+                except IndexError:
+                    print("** value missing **")
+                    return
+                setattr(storage.all()[key], attr_name, new_value)
+                storage.all()[key].save()
+            except IndexError:
+                print("** no instance found **")
 
-            for value in obj_dict.values():
-                res = eval(value["__class__"])(**value)
-                print(res)
-
-    def count(self, args=""):
-        """ Counts number of instances of a class\n
-        (usage: <class name>.count()\n
-        """
-        obj_dict = {}
-        obj_dict_by_model = {}
-        if args:
-            if args in HBNBCommand.__model_list:
-                with open("file.json", mode="r") as fp:
-                    obj_dict = json.load(fp)
-
-                for key, value in obj_dict.items():
-                    if value["__class__"] == args:
-                        obj_dict_by_model[key] = value
-                print(len(obj_dict_by_model))
-
-            else:
-                print("** class doesn't exist **")
-        else:
-            with open("file.json", mode="r") as fp:
-                obj_dict = json.load(fp)
-            print(len(obj_dict))
-
-    def do_update(self, args):
-        """ Update an instance based ob the class name and id\n
-        by adding or updating attribute (usage: update <class name>\
-        <id> <attribute name> "<attribute value>")\n
-        """
-        update_dict = {"0": "", "1": "", "2": "", "3": ""}
-        obj_dict = {}
-        dict_key = ""
-        res = {}
-        i = 0
-
-        if args:
-            args = list(args.split(" "))
-
-            while i < len(args):
-                update_dict[str(i)] = args[i]
-                i += 1
-
-            if update_dict["0"] in HBNBCommand.__model_list:
-                if update_dict["1"]:
-                    with open("file.json", mode="r") as fp:
-                        obj_dict = json.load(fp)
-
-                    for key, value in obj_dict.items():
-                        if value["id"] == update_dict["1"]:
-                            res = value
-
-                    if res != {}:
-                        if update_dict["2"]:
-                            if update_dict["3"]:
-                                for key, value in obj_dict.items():
-
-                                    if value["id"] == update_dict["1"]:
-                                        attr = update_dict["2"]
-                                        value[attr] = update_dict["3"]
-                                print(obj_dict)
-                                with open("file.json", mode="w") as fp:
-                                    json.dump(obj_dict, fp)
-                            else:
-                                print("** value missing **")
-                        else:
-                            print("** attribute name missing **")
-                    else:
-                        print("** no instance found **")
-                else:
-                    print("** instance id missing **")
-            else:
-                print("** class doesn't exist **")
-        else:
-            print("** class name missing **")
+        pass
 
 
-if __name__ == "__main__":
-    HBNBCommand().cmdloop()       
+def parse(arg):
+    return arg.split()
+
+
+if __name__ == '__main__':
+    HBNBCommand().cmdloop()
