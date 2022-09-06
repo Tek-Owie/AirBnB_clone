@@ -27,18 +27,13 @@ class BaseModel:
         Raises:
     """
 
-<<<<<<< HEAD
-    def __init__(self):
-        """Create an instance of BaseModel."""
-
-=======
     def __init__(self, *args, **kwargs):
         """ An initialize a new BaseModel
             Args:
                 *args (any): Unused.
                 **kwargs (dict): Key/value pairs of attributes.
         """
->>>>>>> 2eced879ad7b0505b35106545469d5d2359079b5
+
         self.id = str(uuid4())
         self.updated_at = datetime.now()
         self.created_at = datetime.now()
@@ -65,19 +60,11 @@ class BaseModel:
         models.storage.save()
 
     def to_dict(self):
-<<<<<<< HEAD
-        """Return a dictionary containing all keys/values of __dict__ of the instance."""
-
-        temp = self.__dict__.copy()
-        temp['__class__'] = type(self).__name__
-        temp['created_at'] = datetime.isoformat(created_at)
-        temp['updated_at'] = datetime.isoformat(updated_at)
-        return temp
-=======
         """Return the dictionary of the BaseModel instance.
         Includes the key/value pair __class__ representing
         the class name of the object.
         """
+
         toDict = self.__dict__.copy()
         toDict["created_at"] = self.created_at.isoformat()
         toDict["updated_at"] = self.updated_at.isoformat()
@@ -88,4 +75,3 @@ class BaseModel:
         """Return the print/str representation of the BaseModel instance."""
         return "[{}] ({}) {}"\
             .format(self.__class__.__name__, self.id, self.__dict__)
->>>>>>> 2eced879ad7b0505b35106545469d5d2359079b5
