@@ -35,8 +35,8 @@ class BaseModel:
         """
 
         self.id = str(uuid4())
-        self.updated_at = datetime.now()
-        self.created_at = datetime.now()
+        self.updated_at = datetime.today()
+        self.created_at = datetime.today()
         # if kwargs is given then update the attributes
         if kwargs:
             # temp variable to hold date/time i.e to comply with pycodestyle
@@ -56,7 +56,7 @@ class BaseModel:
 
     def save(self):
         """Update updated_at with the current datetime."""
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.today()
         models.storage.save()
 
     def to_dict(self):
