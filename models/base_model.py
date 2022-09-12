@@ -33,9 +33,10 @@ class BaseModel:
                 *args (any): Unused.
                 **kwargs (dict): Key/value pairs of attributes.
         """
+
         self.id = str(uuid4())
-        self.updated_at = datetime.now()
-        self.created_at = datetime.now()
+        self.updated_at = datetime.today()
+        self.created_at = datetime.today()
         # if kwargs is given then update the attributes
         if kwargs:
             # temp variable to hold date/time i.e to comply with pycodestyle
@@ -55,7 +56,7 @@ class BaseModel:
 
     def save(self):
         """Update updated_at with the current datetime."""
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.today()
         models.storage.save()
 
     def to_dict(self):
@@ -63,6 +64,7 @@ class BaseModel:
         Includes the key/value pair __class__ representing
         the class name of the object.
         """
+
         toDict = self.__dict__.copy()
         toDict["created_at"] = self.created_at.isoformat()
         toDict["updated_at"] = self.updated_at.isoformat()
