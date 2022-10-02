@@ -38,21 +38,15 @@ class BaseModel:
         self.updated_at = datetime.today()
         self.created_at = datetime.today()
         # if kwargs is given then update the attributes
-        if kwargs:
-            # temp variable to hold date/time i.e to comply with pycodestyle
-            temp1 = kwargs.get("created_at")
-            temp2 = kwargs.get("updated_at")
-            self.id = kwargs.get("id")
-            # Iso_format_string - '%Y-%m-%dT%H:%M:%S.%f'
-            self.created_at = datetime.strptime(temp1, '%Y-%m-%dT%H:%M:%S.%f')
-            self.updated_at = datetime.strptime(temp2, '%Y-%m-%dT%H:%M:%S.%f')
-            # Only to be added if name/my_number is specified
-            if kwargs.__contains__("name"):
-                self.name = kwargs.get("name")
-            if kwargs.__contains__("my_number"):
-                self.my_number = kwargs.get("my_number")
-        else:
-            models.storage.new(self)
+        if len(kwargs):
+            iso_format = "%Y-%m-%dT%H:%M:%S.%f"
+            for key, value in kwargs.items():
+                if key in ["created_at", "updated_at"]:
+                    self.__dict__[key] = datetime.strptime(value, iso_format)
+                else:
+                    self.__dict__[key] = value
+         else:
+             models.storage.new(self)
 
     def save(self):
         """Update updated_at with the current datetime."""
@@ -73,5 +67,4 @@ class BaseModel:
 
     def __str__(self):
         """Return the print/str representation of the BaseModel instance."""
-        return "[{}] ({}) {}"\
-            .format(self.__class__.__name__, self.id, self.__dict__)
+        return f"[{self.__class__.__name__}] ({self.id}) {self.__dict__}"
